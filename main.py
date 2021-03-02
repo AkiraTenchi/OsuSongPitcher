@@ -1,27 +1,28 @@
-import os
+from os import listdir, remove
 from os.path import isdir
 import librosa, soundfile
 from pydub import AudioSegment
+import threading
 
 
 def loadFiles(path):
-    dirList = os.listdir(path)
+    dirList = listdir(path)
     songList = []
 
     for dir in dirList:
         if isdir(path + "\\" + dir):
-            temp = os.listdir(path + "\\" + dir)
+            temp = listdir(path + "\\" + dir)
             for file in temp:
                 if file.endswith(".mp3"):
                     songList.append(path + "\\" + dir + "\\" + file)
     return songList
 
 
-def pitchSong(path):
+def pitchSong(path, steps):
     y, sr = librosa.load(path)
-    y_pitched = librosa.effects.pitch_shift(y, sr, n_steps=4)
+    y_pitched = librosa.effects.pitch_shift(y, sr, n_steps=steps)
 
-    os.remove(path)
+    remove(path)
 
     path = path.replace(".mp3", "")
 
@@ -33,10 +34,16 @@ def pitchSong(path):
 
 def main():
     path = input("Please input Song Folder Path")
+    steps = input("By how much do you want to pitch the songs (-10, 10)")
     songList = loadFiles(path)
-    print(songList)
+
     for song in songList:
-        pitchSong(song)
+        print(threading.active_count())
+        if threading.active_count() <= 2:
+            threading.Thread(target=pitchSong, args=(song, steps)).start()
+            continue
+        print("here")
+        pitchSong(song, steps)
 
 
 main()
